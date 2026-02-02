@@ -1,0 +1,24 @@
+FROM python:3.9-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install modern versions of dependencies that support ARM64
+RUN pip install --no-cache-dir \
+    "numpy>=1.21.0,<2.0.0" \
+    "scipy>=1.7.0" \
+    "networkx>=2.6" \
+    "scikit-learn>=1.0" \
+    "tensorflow>=2.8.0"
+
+# Fix NetworkX compatibility with Python 3.9+ (fractions.gcd moved to math.gcd)
+# Note: Newer versions of NetworkX might have fixed this, but this is a safe patch.
+RUN find /usr/local/lib/python3.9/site-packages/networkx -name "*.py" -exec sed -i 's/from fractions import gcd/from math import gcd/g' {} +
+
+COPY . /app
+WORKDIR /app
+
+# The code requires a tiny modification to run on TF 2.x (which we applied to the files)
+ENTRYPOINT ["python"]

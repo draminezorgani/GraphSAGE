@@ -1,4 +1,5 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 from .layers import Layer, Dense
 from .inits import glorot, zeros
@@ -400,7 +401,7 @@ class SeqAggregator(Layer):
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.neigh_input_dim = neigh_input_dim
-        self.cell = tf.contrib.rnn.BasicLSTMCell(self.hidden_dim)
+        self.cell = tf.nn.rnn_cell.BasicLSTMCell(self.hidden_dim)
 
     def _call(self, inputs):
         self_vecs, neigh_vecs = inputs

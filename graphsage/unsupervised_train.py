@@ -3,7 +3,8 @@ from __future__ import print_function
 
 import os
 import time
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import numpy as np
 
 from graphsage.models import SampleAndAggregate, SAGEInfo, Node2VecModel
@@ -323,9 +324,9 @@ def train(train_data, test_data=None):
 
         if FLAGS.model == "n2v":
             # stopping the gradient for the already trained nodes
-            train_ids = tf.constant([[id_map[n]] for n in G.nodes_iter() if not G.node[n]['val'] and not G.node[n]['test']],
+            train_ids = tf.constant([[id_map[str(n)]] for n in G.nodes() if not G.nodes[str(n)]['val'] and not G.nodes[str(n)]['test']],
                     dtype=tf.int32)
-            test_ids = tf.constant([[id_map[n]] for n in G.nodes_iter() if G.node[n]['val'] or G.node[n]['test']], 
+            test_ids = tf.constant([[id_map[str(n)]] for n in G.nodes() if G.nodes[str(n)]['val'] or G.nodes[str(n)]['test']], 
                     dtype=tf.int32)
             update_nodes = tf.nn.embedding_lookup(model.context_embeds, tf.squeeze(test_ids))
             no_update_nodes = tf.nn.embedding_lookup(model.context_embeds,tf.squeeze(train_ids))
@@ -336,7 +337,7 @@ def train(train_data, test_data=None):
 
             # run random walks
             from graphsage.utils import run_random_walks
-            nodes = [n for n in G.nodes_iter() if G.node[n]["val"] or G.node[n]["test"]]
+            nodes = [n for n in G.nodes() if G.nodes[str(n)]["val"] or G.nodes[str(n)]["test"]]
             start_time = time.time()
             pairs = run_random_walks(G, nodes, num_walks=50)
             walk_time = time.time() - start_time

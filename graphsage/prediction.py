@@ -3,7 +3,8 @@ from __future__ import print_function
 
 from graphsage.inits import zeros
 from graphsage.layers import Layer
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
@@ -50,7 +51,7 @@ class BipartiteEdgePredLayer(Layer):
                         'pred_weights', 
                         shape=(input_dim1, input_dim2),
                         dtype=tf.float32, 
-                        initializer=tf.contrib.layers.xavier_initializer())
+                        initializer=tf.glorot_uniform_initializer())
 
             if self.bias:
                 self.vars['bias'] = zeros([self.output_dim], name='bias')

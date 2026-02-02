@@ -20,7 +20,7 @@ def run_regression(train_embeds, train_labels, test_embeds, test_labels):
     from sklearn.multioutput import MultiOutputClassifier
     dummy = MultiOutputClassifier(DummyClassifier())
     dummy.fit(train_embeds, train_labels)
-    log = MultiOutputClassifier(SGDClassifier(loss="log"), n_jobs=10)
+    log = MultiOutputClassifier(SGDClassifier(loss="log_loss"), n_jobs=10)
     log.fit(train_embeds, train_labels)
 
     f1 = 0
@@ -40,28 +40,28 @@ if __name__ == '__main__':
     setting = args.setting
 
     print("Loading data...")
-    G = json_graph.node_link_graph(json.load(open(dataset_dir + "/ppi-G.json")))
-    labels = json.load(open(dataset_dir + "/ppi-class_map.json"))
-    labels = {int(i):l for i, l in labels.iteritems()}
+    G = json_graph.node_link_graph(json.load(open(dataset_dir + "-G.json")))
+    labels = json.load(open(dataset_dir + "-class_map.json"))
+    labels = {str(i):l for i, l in labels.items()}
     
-    train_ids = [n for n in G.nodes() if not G.node[n]['val'] and not G.node[n]['test']]
-    test_ids = [n for n in G.nodes() if G.node[n][setting]]
-    train_labels = np.array([labels[i] for i in train_ids])
+    train_ids = [n for n in G.nodes() if not G.nodes[n]['val'] and not G.nodes[n]['test']]
+    test_ids = [n for n in G.nodes() if G.nodes[n][setting]]
+    train_labels = np.array([labels[str(i)] for i in train_ids])
     if train_labels.ndim == 1:
         train_labels = np.expand_dims(train_labels, 1)
-    test_labels = np.array([labels[i] for i in test_ids])
+    test_labels = np.array([labels[str(i)] for i in test_ids])
     print("running", data_dir)
 
     if data_dir == "feat":
         print("Using only features..")
-        feats = np.load(dataset_dir + "/ppi-feats.npy")
+        feats = np.load(dataset_dir + "-feats.npy")
         ## Logistic gets thrown off by big counts, so log transform num comments and score
         feats[:,0] = np.log(feats[:,0]+1.0)
         feats[:,1] = np.log(feats[:,1]-min(np.min(feats[:,1]), -1))
-        feat_id_map = json.load(open(dataset_dir + "/ppi-id_map.json"))
-        feat_id_map = {int(id):val for id,val in feat_id_map.iteritems()}
-        train_feats = feats[[feat_id_map[id] for id in train_ids]] 
-        test_feats = feats[[feat_id_map[id] for id in test_ids]] 
+        feat_id_map = json.load(open(dataset_dir + "-id_map.json"))
+        feat_id_map = {str(id):val for id,val in feat_id_map.items()}
+        train_feats = feats[[feat_id_map[str(id)] for id in train_ids]] 
+        test_feats = feats[[feat_id_map[str(id)] for id in test_ids]] 
         print("Running regression..")
         from sklearn.preprocessing import StandardScaler
         scaler = StandardScaler()
@@ -74,9 +74,9 @@ if __name__ == '__main__':
         id_map = {}
         with open(data_dir + "/val.txt") as fp:
             for i, line in enumerate(fp):
-                id_map[int(line.strip())] = i
-        train_embeds = embeds[[id_map[id] for id in train_ids]] 
-        test_embeds = embeds[[id_map[id] for id in test_ids]] 
+                id_map[str(line.strip().replace(" ", ""))] = i
+        train_embeds = embeds[[id_map[str(id)] for id in train_ids]] 
+        test_embeds = embeds[[id_map[str(id)] for id in test_ids]] 
 
         print("Running regression..")
         run_regression(train_embeds, train_labels, test_embeds, test_labels)
